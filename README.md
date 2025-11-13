@@ -11,3 +11,7 @@ _No files were provided by the course, everything is done as the assignment._
 - [k6](https://grafana.com/docs/k6/latest/set-up/)
 - Docker
 - Docker Compose
+
+## Structure
+
+- `server` - Node.js Express application that has two endpoints: `GET /users/search` and `GET /users/:id`.
