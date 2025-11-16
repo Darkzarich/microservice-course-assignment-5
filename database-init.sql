@@ -13,7 +13,7 @@ INSERT INTO users (first_name, last_name, birthdate, biography, city)
 SELECT 
   first_names[floor(random() * array_length(first_names, 1) + 1)],
   last_names[floor(random() * array_length(last_names, 1) + 1)],
-  DATE '1950-01-01' + (random() * (DATE '2025-01-01' - DATE '1950-01-01')) * random(),
+  DATE '1950-01-01' + FLOOR(random() * (DATE '2025-01-01' - DATE '1950-01-01'))::INTEGER,
   CASE 
     WHEN random() < 0.7 THEN lorem_ipsum[floor(random() * array_length(lorem_ipsum, 1) + 1)]
     ELSE NULL 

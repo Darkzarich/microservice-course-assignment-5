@@ -4,9 +4,9 @@ import pg from 'pg';
 const client = new pg.Client({
   host: process.env.POSTGRES_HOST || 'localhost',
   port: 5432,
-  user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD || 'postgres',
-  database: process.env.POSTGRES_DB || 'postgres',
+  user: process.env.POSTGRES_USER || 'myuser',
+  password: process.env.POSTGRES_PASSWORD || 'mypassword',
+  database: process.env.POSTGRES_DB || 'mydatabase',
 });
 
 client.connect();
