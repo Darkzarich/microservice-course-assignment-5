@@ -9,25 +9,29 @@ export const options = {
 
 const BASE_URL = 'http://localhost:3000';
 
-const searchFirstNames = ['Jam', 'Ma', 'Jo', 'Patric', 'Robe', 'Jennif', 'Micha', 'Lin', 'Willi', 'Elizabe', 'Jose', 'Jessica'];
-const searchLastNames = ['Smi', 'Johns', 'Willia', 'Bro', 'Jon', 'Garc', 'Mill', 'Dav', 'Rodrigu', 'Martin', 'Hernandez'];
+function get3RandomLetters() {
+  const randomLength = Math.floor(Math.random() * 4) + 2;
+  const letters = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ').sort(() => 0.5 - Math.random()).slice(0, randomLength).join('')
+
+  return letters.charAt(0).toUpperCase() + letters.slice(1).toLowerCase();
+}
 
 export default function () {
-  const userId = Math.floor(Math.random() * 100_000) + 1;
+  const userId = Math.floor(Math.random() * 1_000_000) + 1;
   const getUserRes = http.get(`${BASE_URL}/users/${userId}`);
 
   check(getUserRes, {
     'GET users/:id status 200': (r) => r.status === 200,
   });
 
-  const randomFirstNameIndex = Math.floor(Math.random() * searchFirstNames.length);
-  const randomLastNameIndex = Math.floor(Math.random() * searchLastNames.length);
+  const randomFirstNamePrefix = get3RandomLetters();
+  const randomLastNamePrefix = get3RandomLetters();
 
-  const searchRes = http.get(`${BASE_URL}/users/search?firstName=${searchFirstNames[randomFirstNameIndex]}&lastName=${searchLastNames[randomLastNameIndex]}`);
+  const searchRes = http.get(`${BASE_URL}/users/search?firstName=${randomFirstNamePrefix}&lastName=${randomLastNamePrefix}`);
 
   check(searchRes, {
     'GET /users/search status 200': (r) => r.status === 200,
   });
 
-  sleep(0.5);
+  sleep(0.2);
 }
