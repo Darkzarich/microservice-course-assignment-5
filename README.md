@@ -63,7 +63,7 @@ Below are the steps I took in order to complete the assignment once I had prepar
 I specifically avoid creating an index for the table so that the load will be more noticeable.
 Without an effective index queries that use `LIKE` condition will be pretty expensive because of the sequential table scan.
 
-### Load-testing with just one PostgreSQL instance
+### Load-testing READ with one PostgreSQL instance
 
 Running the load test that will last for 3 minutes:
 
@@ -78,6 +78,30 @@ Disk Read Bytes metric peaked and then dropped back to 0 even though the load wa
 
 ![grafana-no-replica-load.jpg](/screenshots/grafana-no-replica-load.jpg)
 
-k6 results for comparison later:
+Load testing results:
 
 ![k6-no-replica-load.jpg](/screenshots/k6-no-replica-load.jpg)
+
+### Load-testing READ with two replicas and one master PostgreSQL node
+
+For this to work `server.js` code was updated to use pool of connections to the replicas. Then in the code it's specified which handlers are read-only and which are write-only.
+read-only handlers will use the connection from the pool of replica connections and write-only handlers will use the connection to the master.
+
+Running the load test that will last for 3 minutes:
+
+```bash
+cd replication
+k6 run load-test.js
+```
+
+During and after the load test Grafana shows that both replicas were working at the price of more disk space, RAM and CPU usage.
+
+![grafana-no-replica-load.jpg](/screenshots/grafana-2-replicas-load.jpg)
+
+Load testing results:
+
+![k6-2-replicas-load.jpg](/screenshots/k6-2-replicas-load.jpg)
+
+It appears that having two replicas the setup was able to handle the load better than having just one instance.
+- less avg request duration
+- three times more requests per second
