@@ -12,6 +12,31 @@ networks:
     driver: bridge
 
 services:
+  server:
+    build:
+      context: ./server
+    container_name: server
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    environment:
+      POSTGRES_MASTER_HOST: postgres-master
+      POSTGRES_MASTER_PORT: 5432
+      POSTGRES_REPLICA_HOSTS: postgres-replica-1:5432,postgres-replica-2:5432
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+      DOCKER_ENV: 'true'
+    networks:
+      - postgres-network
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      postgres-replica-1:
+        condition: service_started
+      postgres-replica-2:
+        condition: service_started
+
   # PostgreSQL Master
   postgres-master:
     image: postgres:17-alpine3.22
