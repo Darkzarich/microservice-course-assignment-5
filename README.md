@@ -36,9 +36,6 @@ The project is organized into two separate setups for comparison:
 - `postgres-master/` - Master PostgreSQL configuration files
 - `postgres-replica-1/` - Replica 1 configuration
 - `postgres-replica-2/` - Replica 2 configuration
-- `check-replication.sh` - Script to verify replication status
-- `QUICKSTART.md` - Quick start guide for replication setup
-- `REPLICATION_SETUP.md` - Detailed replication setup documentation
 
 ## Run
 
