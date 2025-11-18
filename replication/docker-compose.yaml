@@ -1,0 +1,129 @@
+x-common-variables: &common-variables
+  POSTGRES_USER: myuser
+  POSTGRES_PASSWORD: mypassword
+  POSTGRES_DB: mydatabase
+  POSTGRES_SHARED_BUFFERS: 32MB
+  POSTGRES_WORK_MEM: 4MB
+  POSTGRES_MAINTENANCE_WORK_MEM: 64MB
+  POSTGRES_EFFECTIVE_CACHE_SIZE: 64MB
+
+networks:
+  postgres-network:
+    driver: bridge
+
+services:
+  # PostgreSQL Master
+  postgres-master:
+    image: postgres:17-alpine3.22
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      <<: *common-variables
+    ports:
+      - 5432:5432
+    volumes:
+      - ./database-init.sql:/docker-entrypoint-initdb.d/database-init.sql
+      - ./postgres-master/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./postgres-master/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./postgres-master/init-replication.sh:/docker-entrypoint-initdb.d/01-init-replication.sh
+      - postgres-master-data:/var/lib/postgresql/data
+      - postgres-master-archive:/var/lib/postgresql/archive
+    command: >
+      postgres
+      -c config_file=/etc/postgresql/postgresql.conf
+      -c hba_file=/etc/postgresql/pg_hba.conf
+    networks:
+      - postgres-network
+    mem_limit: 512m
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U myuser -d mydatabase']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL Replica 1
+  postgres-replica-1:
+    image: postgres:17-alpine3.22
+    container_name: postgres-replica-1
+    restart: unless-stopped
+    environment:
+      <<: *common-variables
+    ports:
+      - 5433:5432
+    volumes:
+      - ./postgres-replica-1/docker-entrypoint.sh:/docker-entrypoint-custom.sh
+      - postgres-replica-1-data:/var/lib/postgresql/data
+    entrypoint: ['/bin/bash', '/docker-entrypoint-custom.sh']
+    networks:
+      - postgres-network
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+    mem_limit: 512m
+
+  # PostgreSQL Replica 2
+  postgres-replica-2:
+    image: postgres:17-alpine3.22
+    container_name: postgres-replica-2
+    restart: unless-stopped
+    environment:
+      <<: *common-variables
+    ports:
+      - 5434:5432
+    volumes:
+      - ./postgres-replica-2/docker-entrypoint.sh:/docker-entrypoint-custom.sh
+      - postgres-replica-2-data:/var/lib/postgresql/data
+    entrypoint: ['/bin/bash', '/docker-entrypoint-custom.sh']
+    networks:
+      - postgres-network
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+    mem_limit: 512m
+
+  # Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: monitoring_prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+      - '--storage.tsdb.path=/prometheus'
+    expose:
+      - 9090
+    ports:
+      - 9090:9090
+    links:
+      - logporter:logporter
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: monitoring_grafana
+    restart: unless-stopped
+    ports:
+      - 3001:3000
+    links:
+      - prometheus:prometheus
+    volumes:
+      - ./grafana/dashboard.json:/var/lib/grafana/dashboards/main.json:ro
+      - ./grafana/provisioning/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml:ro
+      - ./grafana/provisioning/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  logporter:
+    image: lifailon/logporter
+    container_name: logporter
+    restart: unless-stopped
+    ports:
+      - 9333:9333
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  postgres-master-data:
+  postgres-master-archive:
+  postgres-replica-1-data:
+  postgres-replica-2-data:
